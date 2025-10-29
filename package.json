@@ -1,0 +1,20 @@
+{
+  "name": "lambda-s3-image-resizer",
+  "version": "0.1.0",
+  "bin": {
+    "lambda-s3-image-resizer": "bin/lambda-s3-image-resizer.js"
+  },
+  "scripts": {
+    "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",
+    "cdk": "cdk",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1030.0",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.215.0",
+    "constructs": "^10.0.0"
+  }
+}
