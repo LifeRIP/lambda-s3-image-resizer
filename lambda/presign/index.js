@@ -7,8 +7,14 @@ const {
 } = require("@aws-sdk/client-s3");
 const { createPresignedPost } = require("@aws-sdk/s3-presigned-post");
 
+const S3_CLIENT_CONFIG = {};
+if (process.env.AWS_STAGE === "local") {
+  S3_CLIENT_CONFIG.endpoint = "https://localhost.localstack.cloud:4566";
+  S3_CLIENT_CONFIG.forcePathStyle = true; // LocalStack prefers path-style addressing
+}
+
 // Let the SDK pick up region from environment (Lambda provides it). Pass empty config.
-const s3 = new S3Client({});
+const s3 = new S3Client(S3_CLIENT_CONFIG);
 
 const BUCKET = process.env.BUCKET_NAME || "localstack-thumbnails-app-images";
 

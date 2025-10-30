@@ -16,7 +16,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.919.0",
     "@aws-sdk/s3-presigned-post": "^3.920.0",
+    "@aws-sdk/s3-request-presigner": "^3.920.0",
     "aws-cdk-lib": "2.215.0",
-    "constructs": "^10.0.0"
+    "constructs": "^10.0.0",
+    "dotenv": "^17.2.3"
   }
 }
