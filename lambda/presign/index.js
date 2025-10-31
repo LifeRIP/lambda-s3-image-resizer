@@ -13,10 +13,9 @@ if (process.env.AWS_STAGE === "local") {
   S3_CLIENT_CONFIG.forcePathStyle = true; // LocalStack prefers path-style addressing
 }
 
-// Let the SDK pick up region from environment (Lambda provides it). Pass empty config.
 const s3 = new S3Client(S3_CLIENT_CONFIG);
-
-const BUCKET = process.env.BUCKET_NAME || "localstack-thumbnails-app-images";
+const BUCKET =
+  process.env.BUCKET_IMAGES_NAME || "localstack-thumbnails-app-images";
 
 /**
  * Lambda handler for generating a presigned GET URL for an existing S3 object.
@@ -25,7 +24,6 @@ const BUCKET = process.env.BUCKET_NAME || "localstack-thumbnails-app-images";
 
 exports.handler = async function (event) {
   const key = event.path.replace(/^\//, "");
-  console.log("Received event:", JSON.stringify(event, null, 2));
   if (!key) {
     return {
       statusCode: 400,
@@ -35,14 +33,14 @@ exports.handler = async function (event) {
     };
   }
 
-  // Verificar si el bucket existe
+  // Verify if the bucket exists
   try {
     await s3.send(new HeadBucketCommand({ Bucket: BUCKET }));
   } catch {
     await s3.send(new CreateBucketCommand({ Bucket: BUCKET }));
   }
 
-  // Verificar si el objeto ya existe
+  // Verify if the object already exists
   try {
     await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
     return {
@@ -55,11 +53,11 @@ exports.handler = async function (event) {
     }
   }
 
-  // Generar URL prefirmada para subir
+  // Generate presigned URL for upload
   const presignedPost = await createPresignedPost(s3, {
     Bucket: BUCKET,
     Key: key,
-    Expires: 300, // 5 minutos
+    Expires: 300, // 5 minutes
   });
 
   return {

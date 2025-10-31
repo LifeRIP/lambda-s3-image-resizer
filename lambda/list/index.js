@@ -11,7 +11,6 @@ if (process.env.AWS_STAGE === "local") {
   S3_CLIENT_CONFIG.forcePathStyle = true; // LocalStack prefers path-style addressing
 }
 
-// Let the SDK pick up region from environment (Lambda provides it). Pass empty config.
 const s3 = new S3Client(S3_CLIENT_CONFIG);
 
 const BUCKET_IMAGES_NAME =
@@ -25,31 +24,6 @@ const BUCKET_RESIZED_NAME =
 
 exports.handler = async function (event) {
   const imagesBucket = BUCKET_IMAGES_NAME;
-  console.log("Received event:", JSON.stringify(event, null, 2));
-  // try {
-  //   // List original images
-  //   const listed = await s3.send(
-  //     new ListObjectsV2Command({ Bucket: imagesBucket })
-  //   );
-
-  //   return {
-  //     statusCode: 200,
-  //     body: JSON.stringify(listed.Contents),
-  //   };
-
-  //   if (!listed.Contents || listed.Contents.length === 0) {
-  //     console.log(`Bucket ${imagesBucket} is empty`);
-  //     return {
-  //       statusCode: 404,
-  //       body: JSON.stringify({ message: "No images found" }),
-  //     };
-  //   }
-  // } catch (err) {
-  //   console.error("Error listing images:", err);
-  //   throw err;
-  // }
-
-  //// CODE COMMENTED OUT FOR BKP
   try {
     // List original images
     const listed = await s3.send(
@@ -58,7 +32,10 @@ exports.handler = async function (event) {
 
     if (!listed.Contents || listed.Contents.length === 0) {
       console.log(`Bucket ${imagesBucket} is empty`);
-      return [];
+      return {
+        statusCode: 404,
+        body: [],
+      };
     }
 
     const resultMap = {};
@@ -92,6 +69,19 @@ exports.handler = async function (event) {
     const resizedListed = await s3.send(
       new ListObjectsV2Command({ Bucket: resizedBucket })
     );
+
+    // // If there are no resized objects, return an empty array immediately
+    // if (
+    //   !resizedListed ||
+    //   !resizedListed.Contents ||
+    //   resizedListed.Contents.length === 0
+    // ) {
+    //   console.log(`Bucket ${resizedBucket} has no resized objects`);
+    //   return {
+    //     statusCode: 200,
+    //     body: JSON.stringify([]),
+    //   };
+    // }
 
     for (const obj of resizedListed.Contents || []) {
       const key = obj.Key;
