@@ -23,7 +23,9 @@ const BUCKET =
  */
 
 exports.handler = async function (event) {
-  const key = event.path.replace(/^\//, "");
+  // Remove '/presign/' prefix from the path to get the actual key
+  let key = event.path.replace(/^\/presign\//, "");
+
   if (!key) {
     return {
       statusCode: 400,

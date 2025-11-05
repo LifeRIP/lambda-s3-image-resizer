@@ -22,7 +22,7 @@ const BUCKET_RESIZED_NAME =
  * Lambda handler for listing images in both S3 buckets.
  */
 
-exports.handler = async function (event) {
+exports.handler = async function () {
   const imagesBucket = BUCKET_IMAGES_NAME;
   try {
     // List original images
