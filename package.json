@@ -7,7 +7,8 @@
   "scripts": {
     "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",
     "cdk": "cdk",
-    "test": "jest"
+    "test": "jest",
+    "layer-sharp": "sh scripts/build-sharp-layer.sh"
   },
   "devDependencies": {
     "aws-cdk": "2.1030.0",
@@ -19,7 +20,6 @@
     "@aws-sdk/s3-request-presigner": "^3.920.0",
     "aws-cdk-lib": "2.215.0",
     "constructs": "^10.0.0",
-    "dotenv": "^17.2.3",
-    "sharp": "^0.34.4"
+    "dotenv": "^17.2.3"
   }
 }

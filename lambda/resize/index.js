@@ -5,6 +5,15 @@ const {
 } = require("@aws-sdk/client-s3");
 const sharp = require("sharp");
 
+try {
+  //const sharp = require("sharp");
+} catch (err) {
+  console.error(
+    "Failed to load sharp module. Make sure it is installed correctly.",
+    err
+  );
+}
+
 const S3_CLIENT_CONFIG = {};
 if (process.env.AWS_STAGE === "local") {
   S3_CLIENT_CONFIG.endpoint = "https://localhost.localstack.cloud:4566";
@@ -61,6 +70,40 @@ exports.handler = async function (event) {
   // target bucket to upload resized images
   const targetBucket = BUCKET;
 
+  // HARDCODED VALUES FOR TESTING
+  const TEST_MODE = true;
+  const TEST_SOURCE_BUCKET = "localstack-thumbnails-app-images";
+  const TEST_IMAGE_KEY = "testImage.jpg";
+
+  if (TEST_MODE) {
+    console.log("TEST MODE - Using hardcoded values");
+    try {
+      const sourceBucket = TEST_SOURCE_BUCKET;
+      const key = TEST_IMAGE_KEY;
+
+      console.log("resizing", sourceBucket, key);
+
+      const { buffer, contentType } = await downloadAndResize(
+        sourceBucket,
+        key
+      );
+
+      const putCmd = new PutObjectCommand({
+        Bucket: targetBucket,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+      });
+      await s3.send(putCmd);
+      console.log(`uploaded resized image to ${targetBucket}/${key}`);
+      return { statusCode: 200, body: "Test completed successfully" };
+    } catch (err) {
+      console.error("error in test mode", err);
+      throw err;
+    }
+  }
+
+  // Process each record in the event (S3 put events)
   for (const record of event.Records || []) {
     try {
       const sourceBucket = record.s3.bucket.name;
