@@ -21,98 +21,120 @@ const BUCKET_RESIZED_NAME =
 /**
  * Lambda handler for listing images in both S3 buckets.
  */
-
 exports.handler = async function () {
-  const imagesBucket = BUCKET_IMAGES_NAME;
   try {
-    // List original images
-    const listed = await s3.send(
-      new ListObjectsV2Command({ Bucket: imagesBucket })
-    );
+    // Collect original images
+    const resultMap = await collectOriginalImages(BUCKET_IMAGES_NAME);
 
-    if (!listed.Contents || listed.Contents.length === 0) {
-      console.log(`Bucket ${imagesBucket} is empty`);
+    if (!resultMap) {
       return {
         statusCode: 404,
         body: [],
       };
     }
 
-    const resultMap = {};
+    // Collect resized images
+    await collectResizedImages(BUCKET_RESIZED_NAME, resultMap);
 
-    // collect the original images
-    for (const obj of listed.Contents) {
-      const key = obj.Key;
-      const timestamp = obj.LastModified
-        ? obj.LastModified.toISOString()
-        : null;
-
-      // generate presigned GET URL (expires in 3600 seconds)
-      const originalUrl = await getSignedUrl(
-        s3,
-        new GetObjectCommand({ Bucket: imagesBucket, Key: key }),
-        { expiresIn: 3600 }
-      );
-
-      resultMap[key] = {
-        Name: key,
-        Timestamp: timestamp,
-        Original: {
-          Size: obj.Size,
-          URL: originalUrl,
-        },
-      };
-    }
-
-    // collect the associated resized images
-    const resizedBucket = BUCKET_RESIZED_NAME;
-    const resizedListed = await s3.send(
-      new ListObjectsV2Command({ Bucket: resizedBucket })
-    );
-
-    // // If there are no resized objects, return an empty array immediately
-    // if (
-    //   !resizedListed ||
-    //   !resizedListed.Contents ||
-    //   resizedListed.Contents.length === 0
-    // ) {
-    //   console.log(`Bucket ${resizedBucket} has no resized objects`);
-    //   return {
-    //     statusCode: 200,
-    //     body: JSON.stringify([]),
-    //   };
-    // }
-
-    for (const obj of resizedListed.Contents || []) {
-      const key = obj.Key;
-      if (!resultMap[key]) continue;
-
-      const resizedUrl = await getSignedUrl(
-        s3,
-        new GetObjectCommand({ Bucket: resizedBucket, Key: key }),
-        { expiresIn: 3600 }
-      );
-
-      resultMap[key].Resized = {
-        Size: obj.Size,
-        URL: resizedUrl,
-      };
-    }
-
-    // return sorted array by Timestamp desc
-    const items = Object.values(resultMap);
-    items.sort((a, b) => {
-      const ta = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
-      const tb = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
-      return tb - ta;
-    });
+    // Sort and return results
+    const sortedItems = sortImagesByTimestamp(resultMap);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(items),
+      body: JSON.stringify(sortedItems),
     };
   } catch (err) {
     console.error("Error listing images:", err);
     throw err;
   }
 };
+
+/**
+ * Collects original images from the images bucket
+ * @param {string} imagesBucket - The name of the images bucket
+ * @returns {Promise<Object>} Map of image data indexed by key
+ */
+async function collectOriginalImages(imagesBucket) {
+  const response = await s3.send(
+    new ListObjectsV2Command({ Bucket: imagesBucket })
+  );
+  const objects = response.Contents || [];
+
+  if (objects.length === 0) {
+    console.log(`Bucket ${imagesBucket} is empty`);
+    return null;
+  }
+
+  const resultMap = {};
+
+  for (const obj of objects) {
+    const key = obj.Key;
+    if (!key) continue;
+    const timestamp = obj.LastModified ? obj.LastModified.toISOString() : null;
+
+    const originalUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({ Bucket: imagesBucket, Key: key }),
+      { expiresIn: 3600 }
+    );
+
+    resultMap[key] = {
+      Name: key,
+      Timestamp: timestamp,
+      Original: {
+        Size: obj.Size,
+        URL: originalUrl,
+      },
+    };
+  }
+
+  return resultMap;
+}
+
+/**
+ * Collects resized images and adds them to the result map
+ * @param {string} resizedBucket - The name of the resized images bucket
+ * @param {Object} resultMap - The map containing original images data
+ * @returns {Promise<void>}
+ */
+async function collectResizedImages(resizedBucket, resultMap) {
+  const response = await s3.send(
+    new ListObjectsV2Command({ Bucket: resizedBucket })
+  );
+  const resizedObjects = response.Contents || [];
+  for (const obj of resizedObjects) {
+    const key = obj.Key;
+    if (!key) continue;
+
+    // Only add resized image if original exists
+    if (!resultMap[key]) continue;
+
+    const resizedUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({ Bucket: resizedBucket, Key: key }),
+      { expiresIn: 3600 }
+    );
+
+    resultMap[key].Resized = {
+      Size: obj.Size,
+      URL: resizedUrl,
+    };
+  }
+}
+
+/**
+ * Sorts images by timestamp in descending order
+ * @param {Object} resultMap - Map of image data
+ * @returns {Array} Sorted array of images
+ */
+function sortImagesByTimestamp(resultMap) {
+  const items = Object.values(resultMap);
+
+  items.sort((a, b) => {
+    const ta = a.Timestamp ? new Date(a.Timestamp).getTime() : 0;
+    const tb = b.Timestamp ? new Date(b.Timestamp).getTime() : 0;
+    return tb - ta;
+  });
+
+  return items;
+}

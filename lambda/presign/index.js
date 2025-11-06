@@ -21,7 +21,6 @@ const BUCKET =
  * Lambda handler for generating a presigned GET URL for an existing S3 object.
  * Accepts the object key from path parameter.
  */
-
 exports.handler = async function (event) {
   // Remove '/presign/' prefix from the path to get the actual key
   let key = event.path.replace(/^\/presign\//, "");

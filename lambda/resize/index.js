@@ -17,46 +17,8 @@ const BUCKET =
 const MAX_DIMENSIONS = { width: 400, height: 400 };
 
 /**
- * Lambda handler for generating a presigned GET URL for an existing S3 object.
- * Accepts the object key from path parameter.
+ * Lambda handler for resizing images uploaded to S3
  */
-
-// Helper: convert a Readable stream (GetObject Body) into a Buffer
-async function streamToBuffer(readable) {
-  const chunks = [];
-  for await (const chunk of readable) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-// Resize an image buffer to fit within MAX_DIMENSIONS and return a buffer
-async function resizeImageBuffer(imageBuffer) {
-  // Use sharp to resize while preserving aspect ratio and avoid enlarging
-  const resized = await sharp(imageBuffer)
-    .resize({
-      width: MAX_DIMENSIONS.width,
-      height: MAX_DIMENSIONS.height,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .toBuffer();
-  return resized;
-}
-
-// Download from S3, resize, return resized buffer and content type
-async function downloadAndResize(bucket, key) {
-  const getCmd = new GetObjectCommand({ Bucket: bucket, Key: key });
-  const getResp = await s3.send(getCmd);
-  const contentType = getResp.ContentType || "application/octet-stream";
-  const body = getResp.Body;
-  const originalBuffer = await streamToBuffer(body);
-
-  const resizedBuffer = await resizeImageBuffer(originalBuffer);
-
-  return { buffer: resizedBuffer, contentType };
-}
-
 exports.handler = async function (event) {
   // target bucket to upload resized images
   const targetBucket = BUCKET;
@@ -93,3 +55,53 @@ exports.handler = async function (event) {
 
   return { statusCode: 200, body: "Processing completed" };
 };
+
+/**
+ * Convert a stream to a Buffer
+ * @param {*} readable - Readable stream to convert
+ * @returns {Promise<Buffer>} Resulting buffer
+ */
+async function streamToBuffer(readable) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+/**
+ * Resize image buffer to fit within MAX_DIMENSIONS while preserving aspect ratio
+ * @param {Buffer} imageBuffer - Original image buffer
+ * @returns {Promise<Buffer>} Resized image buffer
+ */
+async function resizeImageBuffer(imageBuffer) {
+  // Use sharp to resize while preserving aspect ratio and avoid enlarging
+  const resized = await sharp(imageBuffer)
+    .resize({
+      width: MAX_DIMENSIONS.width,
+      height: MAX_DIMENSIONS.height,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .toBuffer();
+  return resized;
+}
+
+/**
+ * Download an image from S3, resize it, and return the resized buffer
+ * @param {string} bucket - Source S3 bucket name
+ * @param {string} key - S3 object key
+ * @returns {Promise<{buffer: Buffer, contentType: string}>} Resized image buffer and content type
+ */
+async function downloadAndResize(bucket, key) {
+  const getCmd = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const getResp = await s3.send(getCmd);
+  const contentType = getResp.ContentType || "application/octet-stream";
+  const body = getResp.Body;
+
+  const originalBuffer = await streamToBuffer(body);
+
+  const resizedBuffer = await resizeImageBuffer(originalBuffer);
+
+  return { buffer: resizedBuffer, contentType };
+}
