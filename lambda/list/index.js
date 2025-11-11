@@ -18,18 +18,48 @@ const BUCKET_IMAGES_NAME =
 const BUCKET_RESIZED_NAME =
   process.env.BUCKET_RESIZED_NAME || "localstack-thumbnails-app-resized";
 
+// Allowed origins for CORS
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localstack-thumbnails-app-frontend.s3-website.localhost.localstack.cloud:4566",
+];
+
+/**
+ * Get CORS headers with the appropriate origin
+ * @param {string} origin - The origin from the request
+ * @returns {Object} CORS headers
+ */
+function getCorsHeaders(origin) {
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "OPTIONS,GET,PUT,POST,DELETE",
+  };
+}
+
 /**
  * Lambda handler for listing images in both S3 buckets.
  */
-exports.handler = async function () {
+exports.handler = async function (event) {
   try {
+    const origin = event?.headers?.origin || event?.headers?.Origin || "";
+    const corsHeaders = getCorsHeaders(origin);
+
     // Collect original images
     const resultMap = await collectOriginalImages(BUCKET_IMAGES_NAME);
 
     if (!resultMap) {
       return {
-        statusCode: 404,
-        body: [],
+        statusCode: 200,
+        body: JSON.stringify([]),
+        headers: corsHeaders,
       };
     }
 
@@ -42,6 +72,7 @@ exports.handler = async function () {
     return {
       statusCode: 200,
       body: JSON.stringify(sortedItems),
+      headers: corsHeaders,
     };
   } catch (err) {
     console.error("Error listing images:", err);
