@@ -7,6 +7,7 @@
 
 h2 {
   margin-bottom: 12px;
+  color: #213547;
 }
 
 .card {
@@ -30,6 +31,8 @@ h2 {
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  background: #fff;
+  color: #213547;
 }
 
 .btns {
@@ -42,13 +45,28 @@ h2 {
   border-radius: 6px;
   border: 1px solid #bbb;
   background: #fafafa;
+  color: #213547;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  background: #e6e6e6;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn.primary {
   background: #0366d6;
   color: white;
   border-color: #0366d6;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: #0256b8;
 }
 
 .file-info {
@@ -147,6 +165,109 @@ h2 {
   background: #e6f4ea;
   color: #064e2a;
   margin-bottom: 6px;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  h2 {
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .card {
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+  }
+
+  .input-url {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .input-url::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .btn {
+    background: #2a2a2a;
+    border-color: #444;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .btn:hover:not(:disabled) {
+    background: #3a3a3a;
+  }
+
+  .btn.primary {
+    background: #0366d6;
+    color: white;
+    border-color: #0366d6;
+  }
+
+  .btn.primary:hover:not(:disabled) {
+    background: #0256b8;
+  }
+
+  .file-info {
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .muted {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  code {
+    background: #2a2a2a;
+    color: #ff6b6b;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .file-card {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+  }
+
+  .file-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .file-card img {
+    border-bottom: 1px solid #3a3a3a;
+  }
+
+  .file-name {
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .file-size {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .file-timestamp {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .file-versions {
+    border-top: 1px solid #3a3a3a;
+  }
+
+  .version-link {
+    color: #58a6ff;
+  }
+
+  .file-key {
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .message {
+    background: #1a3d2a;
+    color: #7ce3a5;
+  }
+
+  .small-muted {
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 .small-muted {

@@ -21,6 +21,7 @@ const BUCKET =
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
   "http://localstack-thumbnails-app-frontend.s3-website.localhost.localstack.cloud:4566",
+  "http://localstack-thumbnails-app-frontend.s3-website-us-east-1.amazonaws.com",
 ];
 
 /**
